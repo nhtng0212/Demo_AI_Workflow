@@ -118,7 +118,8 @@ def main():
     app = workflow.compile()
 
     while True:
-        input_text = input()
+        print("\n\n\n")
+        input_text = input("[INPUT] Nhập yêu cầu của bạn:")
 
         # Run a test case
         print("\n STARTING WORKFLOW")

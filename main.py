@@ -27,7 +27,7 @@ def classify_node(state: AgentState):
     Node: Classifier
     Calls Gemini to classify the user's intent based on their request.
     """
-    print(f"->[Classifier Node] Analyzing: '{state['user_request']}'")
+    print(f"-> @@@ [Classifier Node] Analyzing: '{state['user_request']}'")
 
     # Initialize the Gemini model
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, max_retries=3)
@@ -52,7 +52,7 @@ def run_git_node(state: AgentState):
     Node: Git Executor
     Executes the auto_push.sh bash script using subprocess.
     """
-    print(f"-> [Git Node] Executing script: {SCRIPT_PATH}")
+    print(f"-> @@@ [Git Node] Executing script: {SCRIPT_PATH}")
 
     try:
         result = subprocess.run(
@@ -117,18 +117,21 @@ def main():
     # Compile the graph
     app = workflow.compile()
 
-    # Run a test case
-    print("\n STARTING WORKFLOW")
-    initial_state = {
-        "user_request": "Hãy giúp tôi đẩy code lên git",
-        "intent": "",
-        "final_answer": "",
-    }
+    while True:
+        input_text = input()
 
-    result = app.invoke(initial_state)
+        # Run a test case
+        print("\n STARTING WORKFLOW")
+        initial_state = {
+            "user_request": input_text,
+            "intent": "",
+            "final_answer": "",
+        }
 
-    print("\n FINAL RESULT")
-    print(result["final_answer"])
+        result = app.invoke(initial_state)
+
+        print("\n FINAL RESULT")
+        print(result["final_answer"])
 
 
 if __name__ == "__main__":

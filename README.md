@@ -36,7 +36,7 @@
     2.  `Router` điều hướng luồng sang `NotSupported Node`.
 *   **Output:** Thông báo: *"Xin lỗi, hiện tại tôi chưa có chức năng này."*
 
-## 4. Cách chạy Demo
-1. Đảm bảo đã thiết lập biến môi trường `GOOGLE_API_KEY` trong file `.env`.
+## 2. Cách chạy Demo
+1. Thiết lập biến môi trường `GOOGLE_API_KEY` trong file `.env` (Mẫu .env_demo).
 2. Chạy lệnh: `python3 main.py`
 3. Nhập câu lệnh điều khiển tại prompt: `[INPUT] Nhập yêu cầu của bạn:`

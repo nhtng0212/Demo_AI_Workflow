@@ -17,7 +17,9 @@
 
 ### Use Case 2: Báo cáo trạng thái (Health Check)
 *   **Mô tả:** Kiểm tra và báo cáo nhanh tình trạng máy chủ (RAM, CPU, Disk space).
-*   **Input:** *"Kiểm tra trạng thái server"*
+*   **Input (Ví dụ):**
+*   *   *"Kiểm tra trạng thái server"*
+    *   *"Check trạng thái phần cứng máy"*
 *   **Workflow:** Gán nhãn `health_check` -> Gọi Node chạy file `health.sh` (chạy các lệnh `top`, `df -h`) -> LLM tóm tắt log hệ thống thành ngôn ngữ tự nhiên.
 
 ### Use Case 3: Xử lý ngoại lệ (Fallback / Out of Scope)

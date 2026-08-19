@@ -20,7 +20,11 @@
 *   **Input (Ví dụ):**
 *   *   *"Kiểm tra trạng thái server"*
     *   *"Check trạng thái phần cứng máy"*
-*   **Workflow:** Gán nhãn `health_check` -> Gọi Node chạy file `health.sh` (chạy các lệnh `top`, `df -h`) -> LLM tóm tắt log hệ thống thành ngôn ngữ tự nhiên.
+*   **Luồng xử lý (Workflow):**
+*   1.  `Classifier Node` phân tích NLU và gán nhãn `intent = health_check`.
+    2.  `Router` điều hướng luồng sang `Health Node`.
+    3.  `Health Node` gọi file `health.sh` qua `subprocess`.
+*   **Output:** Trả về log terminal chi tiết từ shell script.
 
 ### Use Case 3: Xử lý ngoại lệ (Fallback / Out of Scope)
 *   **Mô tả:** Hệ thống từ chối an toàn các yêu cầu không nằm trong phạm vi kịch bản.

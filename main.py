@@ -30,7 +30,9 @@ def classify_node(state: AgentState):
     print(f"-> @@@ [Classifier Node] Analyzing: '{state['user_request']}'")
 
     # Initialize the Gemini model
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, max_retries=3)
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-flash-latest", temperature=0, max_retries=3
+    )
 
     # Define the prompt messages
     messages = [
@@ -42,7 +44,21 @@ def classify_node(state: AgentState):
 
     # Call the LLM and clean result
     response = llm.invoke(messages)
-    ai_result = response.content.strip().lower()
+
+    # Handle response
+    raw_content = response.content
+
+    if isinstance(raw_content, list):
+        text_content = ""
+        for item in raw_content:
+            if isinstance(item, dict) and "text" in item:
+                text_content += item["text"]
+            elif isinstance(item, str):
+                text_content += item
+
+        ai_result = text_content.strip().lower()
+    else:
+        ai_result = str(raw_content).strip().lower()
 
     return {"intent": ai_result}
 

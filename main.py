@@ -1,4 +1,5 @@
 import subprocess
+import warnings
 from pathlib import Path
 from typing import TypedDict
 
@@ -7,11 +8,16 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
+# ignore wr
+warnings.filterwarnings("ignore")
+
+
 # file .env
 load_dotenv()
 
 # Path
-SCRIPT_PATH = Path(__file__).parent.resolve() / "auto_push.sh"
+SCRIPT_AUTOPUSH_PATH = Path(__file__).parent.resolve() / "auto_push.sh"
+SCRIPT_HEALTH_PATH = Path(__file__).parent.resolve() / "health.sh"
 
 
 # State
@@ -37,7 +43,28 @@ def classify_node(state: AgentState):
     # Define the prompt messages
     messages = [
         SystemMessage(
-            content="You are a classification system. Read the user request. If the request is about pushing code to git, return exactly 'git_push'. For any other request, return exactly 'unknown'. DO NOT EXPLAIN."
+            content="""You are a routing agent for a terminal automation system.
+                        Your job is to read the user's input and map it to an EXACT internal intent tag.
+
+                        Available tags: ['git_push', 'health_check', 'unknown']
+
+                        EXAMPLES:
+                        Input: "hãy giúp tôi đẩy code lên git"
+                        Output: git_push
+
+                        Input: "commit và push các file này đi"
+                        Output: git_push
+
+                        Input: "server còn bao nhiêu ram?"
+                        Output: health_check
+
+                        Input: "kiểm tra trạng thái máy chủ"
+                        Output: health_check
+
+                        Input: "thời tiết hôm nay thế nào?"
+                        Output: unknown
+
+                        Now, process the following input. Output ONLY the tag, nothing else."""
         ),
         HumanMessage(content=state["user_request"]),
     ]
@@ -63,16 +90,47 @@ def classify_node(state: AgentState):
     return {"intent": ai_result}
 
 
-def run_git_node(state: AgentState):
+def run_health_node(state: AgentState):
     """
-    Node: Git Executor
-    Executes the auto_push.sh bash script using subprocess.
+    Node: Health
+    Executes the health.sh
     """
-    print(f"-> @@@ [Git Node] Executing script: {SCRIPT_PATH}")
+    print(f"-> @@@ [Health Node] Executing script: {SCRIPT_HEALTH_PATH}")
 
     try:
         result = subprocess.run(
-            ["bash", "auto_push.sh"], capture_output=True, text=True, check=True
+            ["bash", str(SCRIPT_HEALTH_PATH)],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        # Check
+        if result.returncode == 0:
+            final_result = f"Successful!\nLog:\n{result.stdout}"
+        else:
+            final_result = f"Error during health:\n{result.stderr}"
+    except FileNotFoundError:
+        final_result = f"File not found: {SCRIPT_HEALTH_PATH}. Did you create it?"
+    except Exception as e:  # noqa: BLE001
+        final_result = f"Unexpected system error: {e}"
+
+    return {"final_answer": final_result}
+
+
+def run_git_node(state: AgentState):
+    """
+    Node: Git Executor
+    Executes the auto_push.sh
+    """
+    print(f"-> @@@ [Git Node] Executing script: {SCRIPT_AUTOPUSH_PATH}")
+
+    try:
+        result = subprocess.run(
+            ["bash", str(SCRIPT_AUTOPUSH_PATH)],
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         # Check
@@ -81,7 +139,7 @@ def run_git_node(state: AgentState):
         else:
             final_result = f"Error during git push:\n{result.stderr}"
     except FileNotFoundError:
-        final_result = f"File not found: {"auto_push.sh"}. Did you create it?"
+        final_result = f"File not found: {SCRIPT_AUTOPUSH_PATH}. Did you create it?"
     except Exception as e:  # noqa: BLE001
         final_result = f"Unexpected system error: {e}"
 
@@ -103,6 +161,8 @@ def route_request(state: AgentState) -> str:
     """
     if state["intent"] == "git_push":
         return "GitPush"
+    elif state["intent"] == "health_check":
+        return "Health"
     else:
         return "NotSupported"
 
@@ -114,6 +174,7 @@ def main():
     # Add Nodes
     workflow.add_node("Classifier", classify_node)
     workflow.add_node("GitPush", run_git_node)
+    workflow.add_node("Health", run_health_node)
     workflow.add_node("NotSupported", not_supported_node)
 
     # Start Node
@@ -123,11 +184,12 @@ def main():
     workflow.add_conditional_edges(
         "Classifier",
         route_request,
-        {"GitPush": "GitPush", "NotSupported": "NotSupported"},
+        {"GitPush": "GitPush", "Health": "Health", "NotSupported": "NotSupported"},
     )
 
     # Set ending points
     workflow.add_edge("GitPush", END)
+    workflow.add_edge("Health", END)
     workflow.add_edge("NotSupported", END)
 
     # Compile the graph
@@ -135,7 +197,7 @@ def main():
 
     while True:
         print("\n\n\n")
-        input_text = input("[INPUT] Nhập yêu cầu của bạn:")
+        input_text = input("[INPUT] Nhập yêu cầu: ")
 
         # Run a test case
         print("\n STARTING WORKFLOW")
